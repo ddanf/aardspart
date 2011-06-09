@@ -30,16 +30,29 @@
    >
   <send>
     last_tick = last_tick or os.clock ()
-    s = (os.clock() - last_tick)
-    --Note(30-s, ' seconds to tick')
-    WindowRectOp (win, miniwin.rect_fill, 0, 0, 0, 0, bgColor)
-    drawMenuHandle()
-    drawFace()
-    drawHand(s)
-    winTitle()
-    local digits = string.format('%02d',31-s)
-    WindowText(win, 'fDigit', digits, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fDigit', digits, false) / 2) + 1, 0.65 * WindowInfo(win, 4), 0, 0, textColor, false)
-    WindowShow(win, true)
+    s = os.clock() - last_tick
+    if s &lt;= 30 then
+      --Note(30-s, ' seconds to tick')
+      WindowRectOp (win, miniwin.rect_fill, 0, 0, 0, 0, bgColor)
+      drawMenuHandle()
+      drawFace()
+      drawHand(s)
+      winTitle()
+      local digits = string.format('%02d',round(30-s))
+      WindowText(win, 'fDigit', digits, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fDigit', digits, false) / 2) + 1, 0.65 * WindowInfo(win, 4), 0, 0, textColor, false)
+      WindowShow(win, true)
+    else
+      local digits = string.format('%02d',round(30-s))
+      local tmpColor
+      local l = round(10.0*(30-s))/10.0
+      if math.abs(l) &lt; math.abs(discThresh) then
+        tmpColor = lateColor
+      else
+        tmpColor = discColor
+      end
+      WindowText(win, 'fDigit', digits, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fDigit', digits, false) / 2) + 1, 0.65 * WindowInfo(win, 4), 0, 0, tmpColor, false)
+      WindowShow(win, true)
+    end
   </send>
   </timer>
 </timers>
@@ -108,6 +121,9 @@ function OnPluginSaveState ()
     SetVariable ("menuColor", menuColor)
     SetVariable ("textColor", textColor)
     SetVariable ("titleColor", titleColor)
+    SetVariable ("discThresh", discThresh)
+    SetVariable ("lateColor", lateColor)
+    SetVariable ("discColor", discColor)
   end
   if titleFont ~= nil then
     SetVariable ("titleFont", serialize.save("titleFont", titleFont))
@@ -131,10 +147,14 @@ function loadState ()
   menuColor = tonumber(GetVariable ("menuColor")) or ColourNameToRGB("gray")
   textColor = tonumber(GetVariable ("textColor")) or ColourNameToRGB("lime")
   titleColor = tonumber(GetVariable ("titleColor")) or ColourNameToRGB("white")
+  
+  discThresh = tonumber(GetVariable ("discThresh")) or 2.0
+  lateColor = GetVariable ("lateColor") or ColourNameToRGB("yellow")
+  discColor = GetVariable ("discColor") or ColourNameToRGB("orange")
+  
   posx = tonumber(GetVariable ("posx")) or 100
   posy = tonumber(GetVariable ("posy")) or 100
   zord = tonumber(GetVariable ("zord")) or 1200
-  
   
   local t = GetVariable("titleFont")
   local d = GetVariable("digitFont")
@@ -217,10 +237,12 @@ function showConfigMenu()
   else
     tCheck = ''
   end
-  local mStr = '!>Font | Title | Face | Digital | < | ' .. tCheck .. 'Transparent | >Colors | Background | Center pin | ^Face | Hand | Marks | Menu handle | Digital | Title | < | - | ^Bring to Front | ^Send to Back'
+  local mStr = '!>Font | Title | Face | Digital | < | ' .. tCheck .. 'Transparent | >Colors | Background | Center pin | ^Face | Hand | Marks | Menu handle | Digital | Title | Late | Disconnected | < | Disc Threshold (' .. math.abs(discThresh) .. ')| - | ^Bring to Front | ^Send to Back'
   local res = tonumber(WindowMenu(win, 5, 5, mStr)) or -1
 
-  if res == 1 then
+  if res < 1 then
+    return
+  elseif res == 1 then
     local n, s, c = fontDetails(titleFont)
     titleFont = utils.fontpicker(n, s, c)
     loadFont('fTitle', titleFont, 8)
@@ -259,8 +281,23 @@ function showConfigMenu()
     textColor = getColor(textColor)
   elseif res == 11 then
     titleColor = getColor(titleColor)
+  elseif res == 12 then
+    lateColor = getColor(lateColor)
+  elseif res == 13 then
+    discColor = getColor(discColor)
+  elseif res == 14 then
+    local msg = "Please enter the time in seconds before a late tick should be considered a disconnect."
+    local title = "disconnect threshold"
+    discThresh = utils.inputbox(msg, title, discThresh, nil, nil, { validate = function (n)
+                                                                    if tonumber(n) ~= nil then
+                                                                      return true
+                                                                    else
+                                                                      return false
+                                                                    end
+                                                                  end
+                                                      }) or discThresh
   else -- unhandled menu option
-    Note('Not yet implemented.')
+    Note('Not yet implemented. (', res, ')')
   end
   OnPluginSaveState()
 end --showConfigMenu
@@ -324,7 +361,7 @@ function drawFace()
 end --drawFace
 
 function drawHand(t)
-    local spt = 30  -- seconds per tick - divisions in the circle
+    local spt = 30.0  -- seconds per tick - divisions in the circle
     local r = 50 -- radius of the hand
     
     a = 2 * math.pi * (spt - t) / spt  -- angle of the line
