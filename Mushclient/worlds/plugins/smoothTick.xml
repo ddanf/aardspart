@@ -45,10 +45,12 @@
       local digits = string.format('%02d',round(30-s))
       local tmpColor
       local l = round(10.0*(30-s))/10.0
-      if math.abs(l) &lt; math.abs(discThresh) then
+      if math.abs(l) &gt;= math.abs(lateThresh) and math.abs(l) &lt; math.abs(discThresh) then
         tmpColor = lateColor
-      else
+      elseif math.abs(l) &gt;= math.abs(discThresh) then
         tmpColor = discColor
+      else
+        tmpColor = textColor
       end
       WindowText(win, 'fDigit', digits, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fDigit', digits, false) / 2) + 1, 0.65 * WindowInfo(win, 4), 0, 0, tmpColor, false)
       WindowShow(win, true)
@@ -121,6 +123,7 @@ function OnPluginSaveState ()
     SetVariable ("menuColor", menuColor)
     SetVariable ("textColor", textColor)
     SetVariable ("titleColor", titleColor)
+    SetVariable ("lateThresh", lateThresh)
     SetVariable ("discThresh", discThresh)
     SetVariable ("lateColor", lateColor)
     SetVariable ("discColor", discColor)
@@ -148,6 +151,7 @@ function loadState ()
   textColor = tonumber(GetVariable ("textColor")) or ColourNameToRGB("lime")
   titleColor = tonumber(GetVariable ("titleColor")) or ColourNameToRGB("white")
   
+  lateThresh = tonumber(GetVariable ("lateThresh")) or 0.3
   discThresh = tonumber(GetVariable ("discThresh")) or 2.0
   lateColor = GetVariable ("lateColor") or ColourNameToRGB("yellow")
   discColor = GetVariable ("discColor") or ColourNameToRGB("orange")
@@ -237,7 +241,7 @@ function showConfigMenu()
   else
     tCheck = ''
   end
-  local mStr = '!>Font | Title | Face | Digital | < | ' .. tCheck .. 'Transparent | >Colors | Background | Center pin | ^Face | Hand | Marks | Menu handle | Digital | Title | Late | Disconnected | < | Disc Threshold (' .. math.abs(discThresh) .. ')| - | ^Bring to Front | ^Send to Back'
+  local mStr = '!>Font | Title | Face | Digital | < | ' .. tCheck .. 'Transparent | >Colors | Background | Center pin | ^Face | Hand | Marks | Menu handle | Digital | Title | Late | Disconnected | < | Late Threshold (' .. math.abs(lateThresh) .. ') | Disc Threshold (' .. math.abs(discThresh) .. ') | - | ^Bring to Front | ^Send to Back'
   local res = tonumber(WindowMenu(win, 5, 5, mStr)) or -1
 
   if res < 1 then
@@ -286,16 +290,13 @@ function showConfigMenu()
   elseif res == 13 then
     discColor = getColor(discColor)
   elseif res == 14 then
+    local msg = "Please enter the time in seconds before a tick should be considered late."
+    local title = "late tick threshold"
+    lateThresh = getNumber(msg, title, lateThresh) or lateThresh
+  elseif res == 15 then
     local msg = "Please enter the time in seconds before a late tick should be considered a disconnect."
     local title = "disconnect threshold"
-    discThresh = utils.inputbox(msg, title, discThresh, nil, nil, { validate = function (n)
-                                                                    if tonumber(n) ~= nil then
-                                                                      return true
-                                                                    else
-                                                                      return false
-                                                                    end
-                                                                  end
-                                                      }) or discThresh
+    discThresh = getNumber(msg, title, discThresh) or discThresh
   else -- unhandled menu option
     Note('Not yet implemented. (', res, ')')
   end
@@ -309,6 +310,17 @@ function fontDetails(f)
     return '-NoFont-', 8, 0
   end
 end --fontDetails
+
+function getNumber(msg, title, def)
+  return utils.inputbox(msg, title, def, nil, nil, { validate = function (n)
+                                                                        if tonumber(n) ~= nil then
+                                                                          return true
+                                                                        else
+                                                                          return false
+                                                                        end
+                                                                      end
+                                                          })
+end --getNumber
 
 function getFont(f)
   local n = utils.fontpicker(f.name, f.colour, f.size)
