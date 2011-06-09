@@ -36,6 +36,7 @@
       WindowRectOp (win, miniwin.rect_fill, 0, 0, 0, 0, bgColor)
       drawMenuHandle()
       drawFace()
+      -- df2()
       drawHand(s)
       winTitle()
       local digits = string.format('%02d',round(30-s))
@@ -53,7 +54,8 @@
         tmpColor = textColor
       end
       WindowText(win, 'fDigit', digits, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fDigit', digits, false) / 2) + 1, 0.65 * WindowInfo(win, 4), 0, 0, tmpColor, false)
-      WindowShow(win, true)
+      -- WindowShow(win, true)
+      Redraw()
     end
   </send>
   </timer>
@@ -63,6 +65,15 @@
 <![CDATA[
 
 require "serialize"
+
+function df2()
+  res = WindowCircleOp(win, 1,  -- window, action
+                       cx - 4 - 52, cy + 6 - 52, cx + 5 + 52, cy + 15 + 52, -- left, top, right, bottom
+                       markColor, 512, 1, -- penColor, penStyle, penWidth
+                       markColor, 1,  -- brushColor, brushStyle
+                       0, 0, 0, 0)  -- extras
+  res = WindowCircleOp(win, 1, cx - 4, cy + 6, cx + 5, cy + 15, pinColor, 0, 1, 0, 0, 0, 0)
+end
 
 function trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
@@ -127,6 +138,7 @@ function OnPluginSaveState ()
     SetVariable ("discThresh", discThresh)
     SetVariable ("lateColor", lateColor)
     SetVariable ("discColor", discColor)
+    SetVariable ("facetCount", facetCount)
   end
   if titleFont ~= nil then
     SetVariable ("titleFont", serialize.save("titleFont", titleFont))
@@ -155,6 +167,8 @@ function loadState ()
   discThresh = tonumber(GetVariable ("discThresh")) or 2.0
   lateColor = GetVariable ("lateColor") or ColourNameToRGB("yellow")
   discColor = GetVariable ("discColor") or ColourNameToRGB("orange")
+  
+  facetCount = GetVariable ("facetCount") or 12
   
   posx = tonumber(GetVariable ("posx")) or 100
   posy = tonumber(GetVariable ("posy")) or 100
@@ -241,7 +255,11 @@ function showConfigMenu()
   else
     tCheck = ''
   end
-  local mStr = '!>Font | Title | Face | Digital | < | ' .. tCheck .. 'Transparent | >Colors | Background | Center pin | ^Face | Hand | Marks | Menu handle | Digital | Title | Late | Disconnected | < | Late Threshold (' .. math.abs(lateThresh) .. ') | Disc Threshold (' .. math.abs(discThresh) .. ') | - | ^Bring to Front | ^Send to Back'
+  local mStr = '!>Font | Title | Face | Digital | < | ' ..
+               tCheck .. 'Transparent | ' ..
+               '>Colors | Background | Center pin | ^Face | Hand | Marks | Menu handle | Digital | Title | Late | Disconnected | < |' ..
+               ' - | Late Threshold (' .. math.abs(lateThresh) .. ') | Disc Threshold (' .. math.abs(discThresh) .. ') | # of Facets (' .. math.abs(facetCount) .. ') |' ..
+               ' - | ^Bring to Front | ^Send to Back'
   local res = tonumber(WindowMenu(win, 5, 5, mStr)) or -1
 
   if res < 1 then
@@ -297,6 +315,10 @@ function showConfigMenu()
     local msg = "Please enter the time in seconds before a late tick should be considered a disconnect."
     local title = "disconnect threshold"
     discThresh = getNumber(msg, title, discThresh) or discThresh
+  elseif res == 16 then
+    local msg = "Please enter number of facets to draw on the clock face."
+    local title = "facet count"
+    facetCount = getNumber(msg, title, facetCount) or facetCount
   else -- unhandled menu option
     Note('Not yet implemented. (', res, ')')
   end
@@ -353,27 +375,50 @@ function round(v)
 end --round
 
 function drawFace()
-    local r = 52
-    local dpd = 12 -- degrees per mark on the clock face
+    local r = 54
+    local dpd = 360 / facetCount -- degrees per mark on the clock face
+    local cx = WindowInfo(win, 3)/2 + 1
+    local cy = WindowInfo(win, 4)/2 + 1
     
-    d = 0
+    markSize = 2
+    d = 360
     fmt = '(sin, cos)=(%1.3f, %1.3f)  (x, y)=(%d, %d)'
-    while d <= 360 do
+    local size
+    while d >= 0 do
         local s = math.sin(2 * math.pi * (360 - d) / 360)
         local c = math.cos(2 * math.pi * (360 - d) / 360)
-        x1 = round(cx + r * s) - 2
-        y1 = round(cy + r * c) - 5
-        -- x2 = round(cx + (r + 5) * s)
-        -- y2 = round(cy + (r + 5) * c)
-        -- WindowLine(win, x1, y1, x2, y2, ColourNameToRGB("black"), 0, 2)
-        res = WindowText(win, 'fFacet', '.', x1, y1, 0, 0, markColor, false)
-        d = d + dpd
+        
+        --if d == 0 then 
+        --elseif d == 180 then
+        --elseif d % 90 == 0 then
+        --elseif d % 30 == 0 then
+        --end
+        x1 = round(cx - r * s)
+        y1 = round(cy - r * c)
+        x2 = round(cx + (r + markSize) * s)
+        y2 = round(cy + (r + markSize) * c)
+        --WindowLine(win, x1, y1, x2, y2, markColor, 0, 2)
+        WindowCircleOp(win, 1, x1-markSize, y1-markSize, x1+markSize, y1+markSize, markColor, 0, 1, 0, 0, 0, 0)
+        -- if you're gonna use text for the marks, you havta offset based on
+        -- the font.  I don't wanna do this right now...
+        -- res = WindowText(win, 'fFacet', '.', x1, y1, 0, 0, markColor, false)
+        d = d - dpd
     end
-    res = WindowCircleOp(win, 1, cx - 4, cy + 6, cx + 5, cy + 15, pinColor, 0, 1, 0, 0, 0, 0)
+    -- res = WindowCircleOp(win, 1, cx - 4, cy + 8, cx + 5, cy + 17, pinColor, 0, 1, 0, 0, 0, 0)
+    r2 = 8
+    -- little circle
+    res = WindowCircleOp(win, 1, cx - r2, cy - r2, cx + r2, cy + r2, pinColor, 0, 1, 0, 0, 0, 0)
+    -- drawX()
 end --drawFace
+
+function drawX()
+  WindowLine(win, 2, 2, 119, 119, handColor, 256, 1)
+  WindowLine(win, 2, 119, 119, 2, handColor, 256, 1)
+end --drawX
 
 function drawHand(t)
     local spt = 30.0  -- seconds per tick - divisions in the circle
+    local sups = 10.0 -- sub-units per second
     local r = 50 -- radius of the hand
     
     a = 2 * math.pi * (spt - t) / spt  -- angle of the line
@@ -395,7 +440,7 @@ function drawHand(t)
     x2 = 1+round(cx - 0.9 * r * s)
     y2 = 10 + round(cy - 0.9 * r * c)
     
-    WindowLine(win, x1, y1, x2, y2, handColor, 0, 2)
+    WindowLine(win, x1, y1, x2, y2, handColor, 256, 2)
 end --drawHand
 
 function winTitle()
