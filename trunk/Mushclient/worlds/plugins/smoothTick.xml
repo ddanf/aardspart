@@ -31,14 +31,14 @@
   <send>
     last_tick = last_tick or os.clock ()
     s = os.clock() - last_tick
+    WindowRectOp (win, miniwin.rect_fill, 0, 0, 0, 0, bgColor)
+    drawMenuHandle()
+    drawFace()
+    drawHand(math.min(30,s))
+    winTitle()
     if s &lt;= 30 then
       --Note(30-s, ' seconds to tick')
-      WindowRectOp (win, miniwin.rect_fill, 0, 0, 0, 0, bgColor)
-      drawMenuHandle()
-      drawFace()
       -- df2()
-      drawHand(s)
-      winTitle()
       local digits = string.format('%02d',round(30-s))
       WindowText(win, 'fDigit', digits, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fDigit', digits, false) / 2) + 1, 0.65 * WindowInfo(win, 4), 0, 0, textColor, false)
       WindowShow(win, true)
