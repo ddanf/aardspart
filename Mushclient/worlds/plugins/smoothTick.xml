@@ -384,7 +384,7 @@ function drawFace()
     d = 360
     fmt = '(sin, cos)=(%1.3f, %1.3f)  (x, y)=(%d, %d)'
     local size
-    while d >= 0 do
+    while d >= dpd do
         local s = math.sin(2 * math.pi * (360 - d) / 360)
         local c = math.cos(2 * math.pi * (360 - d) / 360)
         
