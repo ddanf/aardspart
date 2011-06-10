@@ -103,7 +103,36 @@ function OnPluginInstall ()
 end -- OnPluginInstall
 
 -- pull in telnet option handling
-dofile (GetPluginInfo (GetPluginID (), 20) .. "telnet_options.lua")
+local paths = { GetPluginInfo(GetPluginID (), 20) .. "telnet_options.lua",
+                GetInfo(60) .. "Aardwolf\\telnet_options.lua",
+                GetInfo(60) .. "telnet_options.lua",
+                GetInfo(59) .. "telnet_options.lua" }
+local tnOpFile
+local tnOpFound = false
+local i = 1
+
+while not tnOpFound and i < #paths do
+  tnOpFile = paths[i]
+  tnOpFound = utils.readdir(tnOpFile)
+  i = i + 1
+end -- while not tnOpFound
+
+if not tnOpFound then
+  Note("To use smoothTick, you must have telnet_options.lua installed in one of the following paths:")
+  for _, p in pairs(paths) do Note("    ", p) end
+  Note()
+  Hyperlink("http://www.gammon.com.au/mushclient/plugins/Aardwolf/telnet_options.lua",
+            "Click here to download telnet_options.lua",
+            "click to download telnet_options.lua",
+            "white", "red",
+            true)
+  Note()
+  ColourNote("yellow","black","Disabling smoothTick.")
+  ColourNote("yellow","black","To turn smoothTick on after installing telnet_options.lua,")
+  ColourNote("yellow","black","press Ctrl-Shift-P, select smoothTick, and click on the 'Enable' button.")
+  EnablePlugin(GetPluginID(), false)
+end --
+dofile (tnOpFile)
 
 function OnPluginDisable ()
   setDefaults()
@@ -225,14 +254,14 @@ function showTicker()
   drawFace()
   
   -- set up the drag handler
-  we = handlers.new(win)
+  tWinEvents = handlers.new(win)
   WindowAddHotspot(win, "hs1",  
                    0, 0, 120, 120,   -- rectangle
                    "",   -- MouseOver
                    "",   -- CancelMouseOver
-                   "we.mousedown",
-                   "we.cancelmousedown", 
-                   "we.mouseup", 
+                   "tWinEvents.mousedown",
+                   "tWinEvents.cancelmousedown", 
+                   "tWinEvents.mouseup", 
                    "Left-Click to drag this window.\nRight-Click to configure smoothTick.",  -- tooltip text
                    1, 0)  -- hand cursor
 
@@ -246,7 +275,7 @@ function showTicker()
                    "Click to configure smoothTick.",  -- tooltip text
                    1, 0)  -- hand cursor
   
-  WindowDragHandler (win, "hs1", "we.dragmove", "we.dragrelease", 0)
+  WindowDragHandler (win, "hs1", "tWinEvents.dragmove", "tWinEvents.dragrelease", 0)
 end --showTicker
 
 function showConfigMenu()
@@ -471,61 +500,59 @@ end --showHelp
 -- miniwindow event handler functions
 -------------------------------------------------------------------------------
 function handlers.new(wName)
-  --Note('initializing handlers.  self = ', handlers)
-  handlers.win = wName
-  --for k, v in pairs(handlers) do
-  --  Note('  ', k, ' = ', v)
-  --end
-  return handlers
-end -- init
+  local self = {}
+  self.win = wName
 
-function handlers.mousedown(flags, hotspot_id)
-  startx, starty = WindowInfo (handlers.win, 14), WindowInfo (handlers.win, 15)
-  WindowSetZOrder(handlers.win, 1200)
-  -- print ("we moused down on hotspot " .. hotspot_id)
-end -- mousedown
+  function self.mousedown(flags, hotspot_id)
+    startx, starty = WindowInfo (self.win, 14), WindowInfo (self.win, 15)
+    WindowSetZOrder(self.win, 1200)
+    -- print ("we moused down on hotspot " .. hotspot_id)
+  end -- mousedown
 
-function handlers.cancelmousedown(flags, hotspot_id)
-  -- print ("we cancelled moused down for hotspot " .. hotspot_id)
-end -- cancelmousedown
+  function self.cancelmousedown(flags, hotspot_id)
+    -- print ("we cancelled moused down for hotspot " .. hotspot_id)
+  end -- cancelmousedown
 
-function handlers.mouseup(flags, hotspot_id)
-  if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
-    showConfigMenu()
-  end
-  -- print ("we moused up on hotspot " .. hotspot_id)
-end -- mouseup
+  function self.mouseup(flags, hotspot_id)
+    if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
+      showConfigMenu()
+    end
+    -- print ("we moused up on hotspot " .. hotspot_id)
+  end -- mouseup
 
-function handlers.dragmove(flags, hotspot_id)
-  if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
-    -- don't drag on right-click
-    return
-  end
-  local posx, posy, flags = WindowInfo (handlers.win, 17),
-                     WindowInfo (handlers.win, 18),
-                     WindowInfo(handlers.win, 8)
-
-  -- print ("moved to position", posx, posy)
-  -- move the window to the new location
-  WindowPosition(handlers.win, posx - startx, posy - starty, 0, setbit(flags, 2));
+  function self.dragmove(flags, hotspot_id)
+    if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
+      -- don't drag on right-click
+      return
+    end
+    local posx, posy, flags = WindowInfo (self.win, 17),
+                       WindowInfo (self.win, 18),
+                       WindowInfo(self.win, 8)
   
-  -- change the mouse cursor shape appropriately
-  if posx < 0 or posx > GetInfo (281) or
-     posy < 0 or posy > GetInfo (280) then
-    check (SetCursor ( 11))   -- X cursor
-  else
-    check (SetCursor ( 1))   -- hand cursor
-  end -- if
+    -- print ("moved to position", posx, posy)
+    -- move the window to the new location
+    WindowPosition(self.win, posx - startx, posy - starty, 0, setbit(flags, 2));
+    
+    -- change the mouse cursor shape appropriately
+    if posx < 0 or posx > GetInfo (281) or
+       posy < 0 or posy > GetInfo (280) then
+      check (SetCursor ( 11))   -- X cursor
+    else
+      check (SetCursor ( 1))   -- hand cursor
+    end -- if
+    
+  end -- dragmove
   
-end -- dragmove
-
-function handlers.dragrelease(flags, hotspot_id)
-  -- print ("mouse drag release for " .. hotspot_id)
-  -- print ("released at position", WindowInfo (win, 17), WindowInfo (win, 18))
-  -- print ("moved to position", posx, posy)
-  -- the window was just moved, so this seems like a good time to save state
-  OnPluginSaveState()
-end -- dragrelease
+  function self.dragrelease(flags, hotspot_id)
+    -- print ("mouse drag release for " .. hotspot_id)
+    -- print ("released at position", WindowInfo (win, 17), WindowInfo (win, 18))
+    -- print ("moved to position", posx, posy)
+    -- the window was just moved, so this seems like a good time to save state
+    OnPluginSaveState()
+  end -- dragrelease
+  
+  return self
+end --handlers.new
 -------------------------------------------------------------------------------
 -- general utility functions
 -------------------------------------------------------------------------------
