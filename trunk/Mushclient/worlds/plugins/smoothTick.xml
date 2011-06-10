@@ -66,6 +66,8 @@
 
 require "serialize"
 
+local handlers = {}
+
 function df2()
   res = WindowCircleOp(win, 1,  -- window, action
                        cx - 4 - 52, cy + 6 - 52, cx + 5 + 52, cy + 15 + 52, -- left, top, right, bottom
@@ -191,7 +193,8 @@ function setDefaults()
   cx = 60 -- center X
   cy = 50 -- center Y
 
-  win = 'ticker'
+  pid = GetPluginID() or '000NotAPlugin000'
+  win = pid .. '_' .. 'ticker'
 end -- setDefaults
 
 function loadFont(id, f, ds)
@@ -209,12 +212,11 @@ function showTicker()
   posx = tonumber(GetVariable('posx')) or 250
   posy = tonumber(GetVariable('posy')) or 250
   flags = tonumber(GetVariable('flags')) or 6
-  -- Note('Creating window at (', posx, ',', posy, ')')
+
   x = WindowCreate(win, posx, posy, 121, 121, 12, setbit(flags, 2), bgColor)
   WindowSetZOrder(win, 1200)
   WindowShow(win, true)
   
-  --Trebuchet MS
   loadFont('fTitle', titleFont, 8)
   loadFont('fDigit', digitFont, 14)
   loadFont('fFacet', facetFont, 8)
@@ -223,14 +225,14 @@ function showTicker()
   drawFace()
   
   -- set up the drag handler
-  
+  we = handlers.new(win)
   WindowAddHotspot(win, "hs1",  
                    0, 0, 120, 120,   -- rectangle
                    "",   -- MouseOver
                    "",   -- CancelMouseOver
-                   "mousedown",
-                   "cancelmousedown", 
-                   "mouseup", 
+                   "we.mousedown",
+                   "we.cancelmousedown", 
+                   "we.mouseup", 
                    "Click to drag this window.",  -- tooltip text
                    1, 0)  -- hand cursor
 
@@ -244,7 +246,7 @@ function showTicker()
                    "Click to configure timer",  -- tooltip text
                    1, 0)  -- hand cursor
   
-  WindowDragHandler (win, "hs1", "dragmove", "dragrelease", 0)
+  WindowDragHandler (win, "hs1", "we.dragmove", "we.dragrelease", 0)
 end --showTicker
 
 function showConfigMenu()
@@ -259,7 +261,8 @@ function showConfigMenu()
                tCheck .. 'Transparent | ' ..
                '>Colors | Background | Center pin | ^Face | Hand | Marks | Menu handle | Digital | Title | Late | Disconnected | < |' ..
                ' - | Late Threshold (' .. math.abs(lateThresh) .. ') | Disc Threshold (' .. math.abs(discThresh) .. ') | # of Facets (' .. math.abs(facetCount) .. ') |' ..
-               ' - | ^Bring to Front | ^Send to Back'
+               ' - | ^Bring to Front | ^Send to Back |' ..
+               ' - | ^Help'
   local res = tonumber(WindowMenu(win, 5, 5, mStr)) or -1
 
   if res < 1 then
@@ -319,6 +322,8 @@ function showConfigMenu()
     local msg = "Please enter number of facets to draw on the clock face."
     local title = "facet count"
     facetCount = getNumber(msg, title, facetCount) or facetCount
+  elseif res == 17 then
+    -- showHelp()
   else -- unhandled menu option
     Note('Not yet implemented. (', res, ')')
   end
@@ -460,28 +465,49 @@ function testHand()
     end
 end
 
-function mousedown(flags, hotspot_id)
-  startx, starty = WindowInfo (win, 14), WindowInfo (win, 15)
-  WindowSetZOrder(win, 1200)
+function showHelp()
+end --showHelp
+-------------------------------------------------------------------------------
+-- miniwindow event handler functions
+-------------------------------------------------------------------------------
+function handlers.new(wName)
+  --Note('initializing handlers.  self = ', handlers)
+  handlers.win = wName
+  --for k, v in pairs(handlers) do
+  --  Note('  ', k, ' = ', v)
+  --end
+  return handlers
+end -- init
+
+function handlers.mousedown(flags, hotspot_id)
+  startx, starty = WindowInfo (handlers.win, 14), WindowInfo (handlers.win, 15)
+  WindowSetZOrder(handlers.win, 1200)
   -- print ("we moused down on hotspot " .. hotspot_id)
 end -- mousedown
 
-function cancelmousedown(flags, hotspot_id)
+function handlers.cancelmousedown(flags, hotspot_id)
   -- print ("we cancelled moused down for hotspot " .. hotspot_id)
 end -- cancelmousedown
 
-function mouseup(flags, hotspot_id)
+function handlers.mouseup(flags, hotspot_id)
+  if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
+    showConfigMenu()
+  end
   -- print ("we moused up on hotspot " .. hotspot_id)
 end -- mouseup
 
-function dragmove(flags, hotspot_id)
-  local posx, posy, flags = WindowInfo (win, 17),
-                     WindowInfo (win, 18),
-                     WindowInfo(win, 8)
+function handlers.dragmove(flags, hotspot_id)
+  if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
+    -- don't drag on right-click
+    return
+  end
+  local posx, posy, flags = WindowInfo (handlers.win, 17),
+                     WindowInfo (handlers.win, 18),
+                     WindowInfo(handlers.win, 8)
 
   -- print ("moved to position", posx, posy)
   -- move the window to the new location
-  WindowPosition(win, posx - startx, posy - starty, 0, setbit(flags, 2));
+  WindowPosition(handlers.win, posx - startx, posy - starty, 0, setbit(flags, 2));
   
   -- change the mouse cursor shape appropriately
   if posx < 0 or posx > GetInfo (281) or
@@ -493,13 +519,16 @@ function dragmove(flags, hotspot_id)
   
 end -- dragmove
 
-function dragrelease(flags, hotspot_id)
+function handlers.dragrelease(flags, hotspot_id)
   -- print ("mouse drag release for " .. hotspot_id)
   -- print ("released at position", WindowInfo (win, 17), WindowInfo (win, 18))
   -- print ("moved to position", posx, posy)
+  -- the window was just moved, so this seems like a good time to save state
   OnPluginSaveState()
 end -- dragrelease
-
+-------------------------------------------------------------------------------
+-- general utility functions
+-------------------------------------------------------------------------------
 
 function bit(p)
   return 2 ^ (p - 1)  -- 1-based indexing
