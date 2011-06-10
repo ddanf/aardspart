@@ -233,7 +233,7 @@ function showTicker()
                    "we.mousedown",
                    "we.cancelmousedown", 
                    "we.mouseup", 
-                   "Click to drag this window.",  -- tooltip text
+                   "Left-Click to drag this window.\nRight-Click to configure smoothTick.",  -- tooltip text
                    1, 0)  -- hand cursor
 
   WindowAddHotspot(win, "0hs",  
@@ -243,7 +243,7 @@ function showTicker()
                    "",
                    "", 
                    "showConfigMenu", 
-                   "Click to configure timer",  -- tooltip text
+                   "Click to configure smoothTick.",  -- tooltip text
                    1, 0)  -- hand cursor
   
   WindowDragHandler (win, "hs1", "we.dragmove", "we.dragrelease", 0)
