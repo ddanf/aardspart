@@ -25,13 +25,13 @@ But let's go back to "why?"...
 And so what started as "let's just take the existing tick timer and dump it into a miniwindow" has turned into 500+ lines of code to give that miniwindow some eye candy.  :D
 
 = Installation and usage =
- * == Download ==
+ == Download ==
    To download the file, right click [http://aardspart.googlecode.com/svn/branches/stable_1_0/Mushclient/worlds/plugins/smoothTick.xml here] and a menu will pop-up. On this menu, left click the Save link as.... From here, save the file into your MUSHclient/worlds/plugins folder.
 
- * == Install ==
+ == Install ==
    Once you have MUSHclient opened, you can load smoothtick.xml by either pressing crtl+shift+p or going to File and Plugins. When the window pops up, you will need to go to the bottom of the screen and click the Add button. From here, you will look for the world>plugins folder. Once in that folder, look for the file name you save the smoothtick under and click on it and click Open.
 
- * == Configuration ==
+ == Configuration ==
    To adjust your settings, you will need to click on the triangle on the upper left corner of the smoothTick window.
    To move the window, click anywhere other than the triangle and drag.  The following menu options are available:
   * Font - Allows you to change smoothTick's fonts.
