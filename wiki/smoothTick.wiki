@@ -33,7 +33,7 @@ And so what started as "let's just take the existing tick timer and dump it into
 
  * == Configuration ==
    To adjust your settings, you will need to click on the triangle on the upper left corner of the smoothTick window.
-   To move the window, click anywhere other than the triangle and drag.  The following menu options are available.
+   To move the window, click anywhere other than the triangle and drag.  The following menu options are available:
   * Font - Allows you to change smoothTick's fonts.
    * Title - used for the text that is displayed in the top of the clock circle.
    * Face - Not yet implemented.
