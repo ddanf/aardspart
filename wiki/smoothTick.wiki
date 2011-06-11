@@ -11,11 +11,53 @@ smoothTick 1.0 features:
  * window dragging
  * (almost) full configurability
 
-= Details =
+= Why do we need another tick timer? =
 It started with "let's get that tick timer out of the status bar..." The folks responsible said "why?" but nobody seemed to care about it like I did, so I brushed off my trigonometry, pulled out my MUSHclient programming manual and said "I can do this!"  The result is smoothTick 1.0.
 
 But let's go back to "why?"...
  
-Many programs write to the status bar.  Some of this information might be nice to have there for more than the 1-2s that typical status bar tick timers allow.
+ * Many programs write to the status bar.  Some of this information might be nice to have there for more than the 1-2s that typical status bar tick timers allow.
 
-When you're waiting for a repop to kill something, even a 1s tick timer can mean the difference between getting that first hit or not.  ;)
+ * When you're waiting for a repop to kill something, even a 1s tick timer can mean the difference between getting that first hit or not.  ;)
+
+And so what started as "let's just take the existing tick timer and dump it into a miniwindow" has turned into 500+ lines of code to give that miniwindow some eye candy.  :D
+
+= Installation and usage =
+How to Setup
+
+1. Downloading
+   To download the file, right click and a menu will pop-up. On this menu, left click the Save link as.... From here, you will save the file into your MUSHclient>worlds>plugins folder.
+
+2. Installing
+   Once you have MUSHclient opened, you can load smoothtick.xml by either pressing crtl+shift+p or going to File and Plugins. When the window pops up, you will need to go to the bottom of the screen and click the Add button. From here, you will look for the world>plugins folder. Once in that folder, look for the file name you save the smoothtick under and click on it and click Open.
+
+3. Settings
+	To adjust your settings, you will need to click on the upside down triangle on the upper left side of the window with the words Tick Ticker and a digital clock counting down.
+		a. Font
+			You can adjust the font for three items: Title, Face, and Digital. To change the font, you need to click on the triangle, highlight Font, and pick which one you wish to change. (At the moment, the Face option in font has no real purpose. This is the rings/circle that make up the outer circle.)
+	
+		b. Transparent
+			This allows you to make the background transparent/clear. It is done so you can lay it onto of other plugins to be unabtrusive.
+
+		c. Colors
+			You can adjust the color for several items: Background, Center Pin, Face(Not Available at the Moment), Hand, Marks, Menu Handle, Digital, Title, Late, Disconnected. To change the color, you need to click on the triangle, highlight Color, and pick which one you wish to change.
+			
+		d. Late Threshold
+			This option allows you to set the amount of time after the expected tick time and before the tick is received until the digital portion changes to the late tick color.
+			
+		e. Disc Threshold
+			This option allows you to set the amount of time after the expected tick time and before the tick is received until the digital portion changes to the late tick color.
+		
+		f. # of Facets
+			This sets the number of facets you have around the outer circle. Suggestion of 12, 30, or 60 is useful.
+		
+		Bring Forward and Send to Back
+			(Not Available at the Moment)
+
+		Help
+			(Not Available at the Moment)
+
+
+
+
+placeholder
