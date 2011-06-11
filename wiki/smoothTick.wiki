@@ -1,7 +1,7 @@
-#summary [http://aardspart.googlecode.com/svn/branches/stable_1_0/Mushclient/worlds/plugins/smoothTick.xml smoothTick 1.0] is an analog+digital tick countdown timer for MUSHclient.
+#summary smoothTick 1.0 is an analog+digital tick countdown timer for MUSHclient.
 
 = Introduction =
-smoothTick is an analog+digital tick countdown timer for MUSHclient.
+[http://aardspart.googlecode.com/svn/branches/stable_1_0/Mushclient/worlds/plugins/smoothTick.xml smoothTick 1.0] is an analog+digital tick countdown timer for MUSHclient.
 
 http://aardspart.googlecode.com/svn/trunk/images/smoothTick.png
 
