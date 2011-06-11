@@ -33,26 +33,27 @@ And so what started as "let's just take the existing tick timer and dump it into
 
  * == Configuration ==
    To adjust your settings, you will need to click on the triangle on the upper left corner of the smoothTick window.
-		a. Font
-			You can adjust the font for three items: Title, Face, and Digital. To change the font, you need to click on the triangle, highlight Font, and pick which one you wish to change. (At the moment, the Face option in font has no real purpose. This is the rings/circle that make up the outer circle.)
-	
-		b. Transparent
-			This allows you to make the background transparent/clear. It is done so you can lay it onto of other plugins to be unabtrusive.
-
-		c. Colors
-			You can adjust the color for several items: Background, Center Pin, Face(Not Available at the Moment), Hand, Marks, Menu Handle, Digital, Title, Late, Disconnected. To change the color, you need to click on the triangle, highlight Color, and pick which one you wish to change.
-			
-		d. Late Threshold
-			This option allows you to set the amount of time after the expected tick time and before the tick is received until the digital portion changes to the late tick color.
-			
-		e. Disc Threshold
-			This option allows you to set the amount of time after the expected tick time and before the tick is received until the digital portion changes to the late tick color.
-		
-		f. # of Facets
-			This sets the number of facets you have around the outer circle. Suggestion of 12, 30, or 60 is useful.
-		
-		Bring Forward and Send to Back
-			(Not Available at the Moment)
-
-		Help
-			(Not Available at the Moment)
+   
+  * === Font === - Allows you to change smoothTick's fonts.
+   * ==== Title ==== - used for the text that is displayed in the top of the clock circle.
+   * ==== Face ==== - Not yet implemented.
+   * ==== Digital ==== - used for the digital timer.
+  * === Transparent === - If this is checked, smoothTick's background will be transparent.
+  * === Colors === - Allows you to change smoothTick's colors.
+        To change any of these colors, select the option and then choose the color you want from the color picker and then click ok.
+   * ==== Background ==== - The background color.  Setting this to anything other than black will disable transparency.
+   * ==== Center Pin ==== - The center pin is the small circle at the center of the clock.
+   * ==== Face ==== - Not yet implemented.
+   * ==== Hand ==== - The hand is the line that sweeps around the clock face.
+   * ==== Marks ==== - Marks (also called facets) are the marks around the outer edge of the clock circle.
+   * ==== Menu Handle ==== - The menu handle is the small triangle in the upper left corner of the smoothTick window.
+   * ==== Digital ==== - This is the digital part of the clock; the numbers that count down to the tick.
+   * ==== Title ==== - The title is the text displayed above the center pin.
+   * ==== Late ==== - When a tick is overdue by the late threshold (see below), the digital countdown will change to this color.
+   * ==== Disconnected ==== - When a tick is overdue by the disc threshold (see below), the digital countdown will change to this color.
+  * === Late Threshold === - The amount of time that a tick can be overdue by before being considered late.
+  * === Disc Threshold === - The amount of time that a tick can be overdue by before we decide the mud has been disconnected.
+  * === # of Facets === - The number of marks or facets around the outer clock circle.  12 is standard for most clocks.  I have had this number as high as 24000 with no performance impact.
+  * === Bring Forward === - Not yet implemented.
+  * === Send to Back === - Not yet implemented.
+  * === Help === - Not yet implemented.
