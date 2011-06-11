@@ -1,0 +1,21 @@
+#summary smoothTick is an analog+digital tick countdown timer for MUSHclient.
+
+= Introduction =
+smoothTick is an analog+digital tick countdown timer for MUSHclient.
+
+http://aardspart.googlecode.com/svn/trunk/images/smoothTick.png
+
+smoothTick 1.0 features:
+ * analog tick timer
+ * digital tick timer
+ * window dragging
+ * (almost) full configurability
+
+= Details =
+It started with "let's get that tick timer out of the status bar..." The folks responsible said "why?" but nobody seemed to care about it like I did, so I brushed off my trigonometry, pulled out my MUSHclient programming manual and said "I can do this!"  The result is smoothTick 1.0.
+
+But let's go back to "why?"...
+ 
+Many programs write to the status bar.  Some of this information might be nice to have there for more than the 1-2s that typical status bar tick timers allow.
+
+When you're waiting for a repop to kill something, even a 1s tick timer can mean the difference between getting that first hit or not.  ;)
