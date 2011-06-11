@@ -1,11 +1,11 @@
-#summary smoothTick is an analog+digital tick countdown timer for MUSHclient.
+#summary [http://aardspart.googlecode.com/svn/branches/stable_1_0/Mushclient/worlds/plugins/smoothTick.xml smoothTick 1.0] is an analog+digital tick countdown timer for MUSHclient.
 
 = Introduction =
 smoothTick is an analog+digital tick countdown timer for MUSHclient.
 
 http://aardspart.googlecode.com/svn/trunk/images/smoothTick.png
 
-smoothTick 1.0 features:
+[http://aardspart.googlecode.com/svn/branches/stable_1_0/Mushclient/worlds/plugins/smoothTick.xml smoothTick 1.0] features:
  * analog tick timer
  * digital tick timer
  * window dragging
@@ -26,7 +26,7 @@ And so what started as "let's just take the existing tick timer and dump it into
 How to Setup
 
 1. Downloading
-   To download the file, right click and a menu will pop-up. On this menu, left click the Save link as.... From here, you will save the file into your MUSHclient>worlds>plugins folder.
+   To download the file, right click [http://aardspart.googlecode.com/svn/branches/stable_1_0/Mushclient/worlds/plugins/smoothTick.xml here] and a menu will pop-up. On this menu, left click the Save link as.... From here, you will save the file into your MUSHclient>worlds>plugins folder.
 
 2. Installing
    Once you have MUSHclient opened, you can load smoothtick.xml by either pressing crtl+shift+p or going to File and Plugins. When the window pops up, you will need to go to the bottom of the screen and click the Add button. From here, you will look for the world>plugins folder. Once in that folder, look for the file name you save the smoothtick under and click on it and click Open.
@@ -56,8 +56,3 @@ How to Setup
 
 		Help
 			(Not Available at the Moment)
-
-
-
-
-placeholder
