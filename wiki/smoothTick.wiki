@@ -39,8 +39,7 @@ And so what started as "let's just take the existing tick timer and dump it into
    * Face - Not yet implemented.
    * Digital - used for the digital timer.
   * Transparent - If this is checked, smoothTick's background will be transparent.
-  * Colors - Allows you to change smoothTick's colors.
-        To change any of these colors, select the option and then choose the color you want from the color picker and then click ok.
+  * Colors - The options below allow you to change smoothTick's colors.  To change any of these colors, select the option and then choose the color you want from the color picker and then click ok.
    * Background - The background color.  Setting this to anything other than black will disable transparency.
    * Center Pin - The center pin is the small circle at the center of the clock.
    * Face - Not yet implemented.
