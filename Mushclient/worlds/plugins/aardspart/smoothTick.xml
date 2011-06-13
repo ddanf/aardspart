@@ -621,7 +621,7 @@ function drawHand(t)
 end --drawHand
 
 function winTitle()
-  local title = 'Tick Timer'
+  local title = 'Smooth Tick'
   res = WindowText(win, 'fTitle', title, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fTitle', title, false) / 2) + 1, 0.25 * WindowInfo(win, 4), 0, 0, titleColor, false)
 end
 
