@@ -584,7 +584,7 @@ function drawFace()
     -- big circle
     res = WindowCircleOp(win, 1, cx - (r-4), cy - (r-4), cx + (r-4), cy + (r-4), bgColor, 5, 0, faceColor, facePattern, 0, 0, 0, 0)
     -- little circle
-    res = WindowCircleOp(win, 1, cx - r2, cy - r2, cx + r2, cy + r2, pinColor, 0, 1, faceColor, 0, 0, 0, 0, 0)
+    res = WindowCircleOp(win, 1, cx - r2, cy - r2, cx + r2, cy + r2, pinColor, 0, 1, faceColor, 1, 0, 0, 0, 0)
     -- drawX()
 end --drawFace
 
