@@ -15,7 +15,7 @@
    save_state="y"
    date_written="2011-06-08 10:48:38"
    requires="4.73"
-   version="1.0"
+   version="2.2"
    >
 </plugin>
 
@@ -65,8 +65,10 @@
 <![CDATA[
 
 require "serialize"
+require "worlds\\plugins\\aardspart\\lua\\spartbits"
+require "worlds\\plugins\\aardspart\\lua\\ezwin"
 
-local handlers = {}
+-- local handlers = {}
 
 function df2()
   res = WindowCircleOp(win, 1,  -- window, action
@@ -228,189 +230,86 @@ function setDefaults()
   win = pid .. '_' .. 'ticker'
 end -- setDefaults
 
-function loadFont(id, f, ds)
-  --Trebuchet MS
-  local nm, sz, bl, it, ul, so
-  if f ~= nil then
-    nm, sz, bl, it, ul, so = f.name, f.size, f.bold, f.italic, f.underline, f.strikeout
-  else
-    nm, sz, bl, it, ul, so = '-NoFont', ds, false, false, false, false
-  end
-  WindowFont (win, id, nm, sz, bl, it, ul, so) -- define font
-end -- loadFont
+function restoreDefaults()
+  lay =  0
+  flags = 0
+  bgColor = ColourNameToRGB("black")
+  pinColor = ColourNameToRGB("deepskyblue")
+  faceColor = ColourNameToRGB("deepskyblue")
+  facePattern = 1
+  handColor = ColourNameToRGB("red")
+  markColor = ColourNameToRGB("deepskyblue")
+  menuColor = ColourNameToRGB("gray")
+  textColor = ColourNameToRGB("lime")
+  titleColor = ColourNameToRGB("white")
+  
+  lateThresh = 0.3
+  discThresh = 2.0
+  lateColor = ColourNameToRGB("yellow")
+  discColor = ColourNameToRGB("orange")
+  
+  facetCount = 12
+  
+  posx = 100
+  posy = 100
+  zord = 1200
+  
+  titleFont = {}
+    titleFont.bold = 0
+    titleFont.colour = 0
+    titleFont.style = "Regular"
+    titleFont.charset = 0
+    titleFont.name = "Rage Italic"
+    titleFont.italic = 0
+    titleFont.underline = 0
+    titleFont.strikeout = 0
+    titleFont.size = 14
+  digitFont = {}
+    digitFont.bold = 0
+    digitFont.colour = 0
+    digitFont.style = "Regular"
+    digitFont.size = 18
+    digitFont.italic = 0
+    digitFont.charset = 0
+    digitFont.underline = 0
+    digitFont.strikeout = 0
+    digitFont.name = "Quartz"
+  facetFont = {}
+    facetFont.bold = 0
+    facetFont.colour = 0
+    facetFont.style = "Regular"
+    facetFont.size = 12
+    facetFont.italic = 0
+    facetFont.charset = 0
+    facetFont.underline = 0
+    facetFont.strikeout = 0
+    facetFont.name = "Lucida Console"
+  WindowSetZOrder(win, zord)
+end --restoreDefaults
 
 function showTicker()
   posx = tonumber(GetVariable('posx')) or 250
   posy = tonumber(GetVariable('posy')) or 250
   flags = tonumber(GetVariable('flags')) or 6
 
-  x = WindowCreate(win, posx, posy, 121, 121, 12, setbit(flags, 2), bgColor)
+  stWin = ezwin.new(win, posx, posy, 121, 121, 12, setbit(flags, 2), bgColor, titleColor, 'stWin')
   WindowSetZOrder(win, 1200)
   WindowShow(win, true)
   
-  loadFont('fTitle', titleFont, 8)
-  loadFont('fDigit', digitFont, 14)
-  loadFont('fFacet', facetFont, 8)
+  stWin.loadFont('fTitle', titleFont, 8)
+  stWin.loadFont('fDigit', digitFont, 14)
+  stWin.loadFont('fFacet', facetFont, 8)
   
   winTitle()
   drawFace()
    
-  -- set up the drag handler
-  tWinEvents = handlers.new(win)
-  WindowAddHotspot(win, "hs1",  
-                   0, 0, 120, 120,   -- rectangle
-                   "",   -- MouseOver
-                   "",   -- CancelMouseOver
-                   "tWinEvents.mousedown",
-                   "tWinEvents.cancelmousedown", 
-                   "tWinEvents.mouseup", 
-                   "Left-Click to drag this window.\nRight-Click to configure smoothTick.",  -- tooltip text
-                   1, 0)  -- hand cursor
-
-  myMenu = setupMenu()
-  WindowAddHotspot(win, "0hs",  
-                   0, 0, 20, 20,   -- rectangle
-                   "",   -- MouseOver
-                   "",   -- CancelMouseOver
-                   "",
-                   "", 
-                   "myMenu.showMenu", 
-                   "Click to configure smoothTick.",  -- tooltip text
-                   1, 0)  -- hand cursor
-  WindowDragHandler (win, "hs1", "tWinEvents.dragmove", "tWinEvents.dragrelease", 0)
+  stWin.addDrag()
+  stWin.createMenu()
+  setupMenu(stWin)
 end --showTicker
 
-function bringToFront(ow)
-  local wl = WindowList()
-  local m
-  for _, w in pairs(wl) do
-      m = math.max(m or 0, WindowInfo(w, 22))
-  end
-  Note(#wl, ' windows.  max Z = ', m)
-  WindowSetZOrder(ow, m + 1)
-end --bringToFront
-
-function sendToBack(ow)
-  local wl = WindowList()
-  local m
-  for _, w in pairs(wl) do
-      m = math.min(m or 0, WindowInfo(w, 22))
-  end
-  Note(#wl, ' windows.  min Z = ', m)
-  WindowSetZOrder(ow, m - 1)
-end --sendToBack
--------------------------------------------------------------------------------
--- BEGIN miniwindow menu class
--------------------------------------------------------------------------------
-local menu = {}
-function menu.new(win)
-  local self = {}
-  self.win = win
-  
-  function self.add(item)
-    -- a menu item table should contain the following elements:
-    --   displayName = text to be displayed on the menu.
-    --   enabled     = boolean true to enable, false to disable
-    --   checked     = function to determine whether or not the item is checked.
-    --                 true = checked, false = unchecked.  If a boolean value is
-    --                 supplied, then the state can not be changed by the menu.
-    --   callback    = function to call when the menu item is selected
-    --   submenu     = boolean true if future items should be children of this
-    --                 item.  true with nil display name to end a submenu.
-    -- if item is nil, then a separator will be added
-    -- if displayName is nil and submenu is true the current submenu will end
-    local msg = ''
-    self.menu = self.menu or {}
-    self.mActive = {}
-    menu = self.menu -- shortcut
-    
-    if item == nil then
-      table.insert(menu, {displayName = '-'})
-      return
-    end
-    if item.displayName == nil and item.submenu then
-      table.insert(menu, {displayName = '<'})
-      return
-    end
-    
-    if type(item.displayName) ~= 'string' and type(item.displayName) ~= 'function' then
-      msg = 'menu item ' .. #menu + 1 .. ' could not be added.  displayName must be string or a function that returns string.'
-    end
-    if type(item.enabled) ~= 'boolean' and type(item.enabled) ~= 'function' then
-      msg = msg .. '\n' .. 'menu item ' .. item.displayName .. ' could not be added.  enabled must be boolean or a function that returns boolean.'
-    end
-    if not item.submenu and type(item.callback) ~= 'function' then
-      msg = msg .. '\n' .. 'menu item ' .. item.displayName .. ' could not be added.  callback must be a function.'
-    end
-    
-    if msg:len() > 0 then
-      -- something is wrong with this menu item, so we are not going to use it.
-      ColourNote("yellow","black",msg)
-      ColourNote("yellow","black","please notify the plugin author of this problem.")
-    else
-      -- add new item
-      n = n or 1
-      table.insert(menu, {displayName = item.displayName, enabled = item.enabled, checked = item.checked, callback = item.callback, submenu = item.submenu})
-    end
-    return
-  end --self.add
-  
-  function self.buildMenu()
-    local mStr = ''
-    for _, item in pairs(self.menu) do
-      if mStr:len() > 0 then mStr = mStr .. ' | ' else mStr = '!' end
-      if item.displayName == '-' or item.displayName == '<' then
-        mStr = mStr .. item.displayName  
-      else
-        if type(item.checked)=='function' then checked = item.checked() else checked = item.checked end
-        if type(item.enabled)=='function' then enabled = item.enabled() else enabled = item.enabled end
-        if type(item.submenu)=='function' then submenu = item.submenu() else submenu = item.submenu end
-        if checked ~= nil then
-          if checked then
-            mStr = mStr .. '+' .. item.displayName
-          else
-            mStr = mStr .. item.displayName
-          end
-          -- this item counts, so tag it and increment our counter
-          table.insert(self.mActive, item)
-        elseif enabled == false then -- we don't want nil values to give us a false negative on this flag...
-          mStr = mStr .. '^' .. item.displayName  -- not counted
-        elseif submenu then
-          mStr = mStr .. '>' .. item.displayName
-          -- this item counts, so tag it and increment our counter
-          -- table.insert(self.mActive, item)
-        else
-          mStr = mStr .. item.displayName
-          -- this item counts, so tag it and increment our counter
-          table.insert(self.mActive, item)        
-        end
-      end
-    end
-    return mStr
-  end --self.buildMenu
-  
-  function self.showMenu(flags, hotspot_id)  -- this is what will be called to start the menu
-    OnPluginSaveState()
-    mStr = self.buildMenu()
-    --Note('mStr = ', mStr)
-    --Note(#self.mActive, ' active items processed.')
-    if mStr:len() == 0 then return end
-    local res = tonumber(WindowMenu(self.win, 5, 5, mStr)) or -1
-    if res > 0 and res <= #self.mActive then
-      self.mActive[res].callback()
-    elseif res >= 1 then
-      ColourNote('yellow','black','Unkown menu option (' .. res .. ').  Please contact the plugin developer.')
-    end
-    OnPluginSaveState()
-  end --self.showMenu
-  
-  return self
-end --menu.new
--------------------------------------------------------------------------------
--- END miniwindow menu class
--------------------------------------------------------------------------------
-function setupMenu()
-  local cfgMenu = menu.new(win)
+function setupMenu(window)
+  local menu = window.menu
       -- a menu item table should contain the following elements:
       --   displayName = text to be displayed on the menu.
       --   enabled     = boolean true to enable, false to disable
@@ -423,82 +322,83 @@ function setupMenu()
       --                 item.  true with nil display name to end a submenu.
       -- if item is nil, then a separator will be added
       -- if displayName is nil and submenu is true the current submenu will end
-  cfgMenu.add({displayName = 'Font', enabled = true, submenu = true})
-  cfgMenu.add({displayName = 'Title', enabled = true, callback = function ()
+  menu.add({displayName = 'Font', enabled = true, submenu = true})
+  menu.add({displayName = 'Title', enabled = true, callback = function ()
                                                                     local n, s, c = fontDetails(titleFont)
                                                                     titleFont = utils.fontpicker(n, s, c)
-                                                                    loadFont('fTitle', titleFont, 8)
+                                                                    window.loadFont('fTitle', titleFont, 8)
                                                                  end})
-  cfgMenu.add({displayName = 'Face', enabled = true, callback = function ()
+  menu.add({displayName = 'Face', enabled = true, callback = function ()
                                                                     local n, s, c = fontDetails(facetFont)
                                                                     facetFont = utils.fontpicker(n, s, c)
-                                                                    loadFont('fFacet', facetFont, 8)
+                                                                    window.loadFont('fFacet', facetFont, 8)
                                                                  end})
-  cfgMenu.add({displayName = 'Digital', enabled = true, callback = function ()
+  menu.add({displayName = 'Digital', enabled = true, callback = function ()
                                                                     local n, s, c = fontDetails(digitFont)
                                                                     digitFont = utils.fontpicker(n, s, c)
-                                                                    loadFont('fDigit', digitFont, 8)
+                                                                    window.loadFont('fDigit', digitFont, 8)
                                                                  end})
-  cfgMenu.add({displayName = nil, submenu = true}) -- end sub menu
-  cfgMenu.add({displayName = 'Transparent', enabled = true,
+  menu.add({displayName = nil, submenu = true}) -- end sub menu
+  menu.add({displayName = 'Transparent', enabled = true,
                checked = function() return (bgColor == WindowInfo(win, 9) and hasbit(WindowInfo(win, 8), 4)) end,
                callback = function ()
                             local flags = WindowInfo(win, 8)
                             if hasbit(flags, 4) then bgColor = WindowInfo(win, 9) end
-                            WindowPosition(win, posx, posy, 0, flipbit(flags, 2))
+                            WindowPosition(win, WindowInfo(win,1), WindowInfo(win,2), 0, flipbit(flags, 4))
                           end})
-  cfgMenu.add({displayName = 'Colors', enabled = true, submenu = true})
-  cfgMenu.add({displayName = 'Background', enabled = true, callback = function() bgColor=getColor(bgColor) end})
-  cfgMenu.add({displayName = 'Center Pin', enabled = true, callback = function() pinColor=getColor(pinColor) end})
-  cfgMenu.add({displayName = 'Face', enabled = true, callback = function() faceColor=getColor(faceColor) end})
-  cfgMenu.add({displayName = 'Hand', enabled = true, callback = function() handColor=getColor(handColor) end})
-  cfgMenu.add({displayName = 'Marks', enabled = true, callback = function() markColor=getColor(markColor) end})
-  cfgMenu.add({displayName = 'Menu Handle', enabled = true, callback = function() menuColor=getColor(menuColor) end})
-  cfgMenu.add({displayName = 'Digital', enabled = true, callback = function() digitColor=getColor(digitColor) end})
-  cfgMenu.add({displayName = 'Title', enabled = true, callback = function() titleColor=getColor(titleColor) end})
-  cfgMenu.add({displayName = 'Late', enabled = true, callback = function() lateColor=getColor(lateColor) end})
-  cfgMenu.add({displayName = 'Disconnected', enabled = true, callback = function() discColor=getColor(discColor) end})
-  cfgMenu.add({displayName = nil, submenu = true}) -- end sub menu
-  cfgMenu.add({displayName = 'Face Pattern', enabled = true, submenu = true})
-  cfgMenu.add({displayName = 'solid', enabled = true, checked = function () return (facePattern == 0) end, callback = function () facePattern = 0 end})
-  cfgMenu.add({displayName = 'none', enabled = true, checked = function () return (facePattern == 1) end, callback = function () facePattern = 1 end})
-  cfgMenu.add({displayName = 'horizontal hatch', enabled = true, checked = function () return (facePattern == 2) end, callback = function () facePattern = 2 end})
-  cfgMenu.add({displayName = 'vertical hatch', enabled = true, checked = function () return (facePattern == 3) end, callback = function () facePattern = 3 end})
-  cfgMenu.add({displayName = 'forward diagonal', enabled = true, checked = function () return (facePattern == 4) end, callback = function () facePattern = 4 end})
-  cfgMenu.add({displayName = 'backward diagonal', enabled = true, checked = function () return (facePattern == 5) end, callback = function () facePattern = 5 end})
-  cfgMenu.add({displayName = 'cross hatch', enabled = true, checked = function () return (facePattern == 6) end, callback = function () facePattern = 6 end})
-  cfgMenu.add({displayName = 'diagonal cross hatch', enabled = true, checked = function () return (facePattern == 7) end, callback = function () facePattern = 7 end})
-  cfgMenu.add({displayName = 'fine fill', enabled = true, checked = function () return (facePattern == 8) end, callback = function () facePattern = 8 end})
-  cfgMenu.add({displayName = 'medium fill', enabled = true, checked = function () return (facePattern == 9) end, callback = function () facePattern = 9 end})
-  cfgMenu.add({displayName = 'coarse fill', enabled = true, checked = function () return (facePattern == 10) end, callback = function () facePattern = 10 end})
-  cfgMenu.add({displayName = 'horizontal waves', enabled = true, checked = function () return (facePattern == 11) end, callback = function () facePattern = 11 end})
-  cfgMenu.add({displayName = 'vertical waves', enabled = true, checked = function () return (facePattern == 12) end, callback = function () facePattern = 12 end})
-  cfgMenu.add({displayName = nil, submenu = true}) -- end sub menu
-  cfgMenu.add(nil) -- separator
-  cfgMenu.add({displayName = 'Late Threshold', enabled = true, callback = function()
+  menu.add({displayName = 'Colors', enabled = true, submenu = true})
+  menu.add({displayName = 'Background', enabled = true, callback = function() bgColor=getColor(bgColor) end})
+  menu.add({displayName = 'Center Pin', enabled = true, callback = function() pinColor=getColor(pinColor) end})
+  menu.add({displayName = 'Face', enabled = true, callback = function() faceColor=getColor(faceColor) end})
+  menu.add({displayName = 'Hand', enabled = true, callback = function() handColor=getColor(handColor) end})
+  menu.add({displayName = 'Marks', enabled = true, callback = function() markColor=getColor(markColor) end})
+  menu.add({displayName = 'Menu Handle', enabled = true, callback = function() menuColor=getColor(menuColor) end})
+  menu.add({displayName = 'Digital', enabled = true, callback = function() digitColor=getColor(digitColor) end})
+  menu.add({displayName = 'Title', enabled = true, callback = function() titleColor=getColor(titleColor) end})
+  menu.add({displayName = 'Late', enabled = true, callback = function() lateColor=getColor(lateColor) end})
+  menu.add({displayName = 'Disconnected', enabled = true, callback = function() discColor=getColor(discColor) end})
+  menu.add({displayName = nil, submenu = true}) -- end sub menu
+  menu.add({displayName = 'Face Pattern', enabled = true, submenu = true})
+  menu.add({displayName = 'solid', enabled = true, checked = function () return (facePattern == 0) end, callback = function () facePattern = 0 end})
+  menu.add({displayName = 'none', enabled = true, checked = function () return (facePattern == 1) end, callback = function () facePattern = 1 end})
+  menu.add({displayName = 'horizontal hatch', enabled = true, checked = function () return (facePattern == 2) end, callback = function () facePattern = 2 end})
+  menu.add({displayName = 'vertical hatch', enabled = true, checked = function () return (facePattern == 3) end, callback = function () facePattern = 3 end})
+  menu.add({displayName = 'forward diagonal', enabled = true, checked = function () return (facePattern == 4) end, callback = function () facePattern = 4 end})
+  menu.add({displayName = 'backward diagonal', enabled = true, checked = function () return (facePattern == 5) end, callback = function () facePattern = 5 end})
+  menu.add({displayName = 'cross hatch', enabled = true, checked = function () return (facePattern == 6) end, callback = function () facePattern = 6 end})
+  menu.add({displayName = 'diagonal cross hatch', enabled = true, checked = function () return (facePattern == 7) end, callback = function () facePattern = 7 end})
+  menu.add({displayName = 'fine fill', enabled = true, checked = function () return (facePattern == 8) end, callback = function () facePattern = 8 end})
+  menu.add({displayName = 'medium fill', enabled = true, checked = function () return (facePattern == 9) end, callback = function () facePattern = 9 end})
+  menu.add({displayName = 'coarse fill', enabled = true, checked = function () return (facePattern == 10) end, callback = function () facePattern = 10 end})
+  menu.add({displayName = 'horizontal waves', enabled = true, checked = function () return (facePattern == 11) end, callback = function () facePattern = 11 end})
+  menu.add({displayName = 'vertical waves', enabled = true, checked = function () return (facePattern == 12) end, callback = function () facePattern = 12 end})
+  menu.add({displayName = nil, submenu = true}) -- end sub menu
+  menu.add(nil) -- separator
+  menu.add({displayName = 'Late Threshold', enabled = true, callback = function()
                                                                             local msg = "How long should a tick be overdue before considered late?  (seconds)"
                                                                             local title = "late tick threshold"
                                                                             lateThresh = getNumber(msg, title, lateThresh) or lateThresh
                                                                           end})
-  cfgMenu.add({displayName = 'Disc Threshold', enabled = true, callback = function()
+  menu.add({displayName = 'Disc Threshold', enabled = true, callback = function()
                                                                             local msg = "How long should a tick be overdue before considered disconnected?  (seconds)"
                                                                             local title = "disconnect threshold"
                                                                             discThresh = getNumber(msg, title, discThresh) or discThresh
                                                                           end})
-  cfgMenu.add({displayName = '# of Facets', enabled = true, callback = function()
+  menu.add({displayName = '# of Facets', enabled = true, callback = function()
                                                                          local msg = "Please enter number of facets to draw on the clock face."
                                                                          local title = "facet count"
                                                                          facetCount = getNumber(msg, title, facetCount) or facetCount
                                                                        end })
-  cfgMenu.add(nil) -- separator
-  cfgMenu.add({displayName = 'Bring to Front', enabled = true, callback = function () bringToFront(win) end})
-  cfgMenu.add({displayName = 'Send to Back', enabled = true, callback = function () sendToBack(win) end})
-  cfgMenu.add(nil) -- separator
-  cfgMenu.add({displayName = 'Help', enabled = true, callback = function ()
-                                                                  Note('OpenBrowser returned: ',
-                                                                    OpenBrowser('http://code.google.com/p/aardspart/wiki/smoothTick'))
+  menu.add(nil) -- separator
+  menu.add({displayName = 'Bring to Front', enabled = true, callback = function () window.bringToFront() end})
+  menu.add({displayName = 'Send to Back', enabled = true, callback = function () window.sendToBack() end})
+  menu.add(nil) -- separator
+  menu.add({displayName = 'Restore Factory Defaults', enabled = true, callback = function () restoreDefaults() end})
+  menu.add(nil) -- separator
+  menu.add({displayName = 'Help', enabled = true, callback = function ()
+                                                                    OpenBrowser('http://code.google.com/p/aardspart/wiki/smoothTick')
                                                                 end})
-  return cfgMenu
+  -- return cfgMenu
 end
 
 function fontDetails(f)
@@ -639,90 +539,7 @@ end
 
 function showHelp()
 end --showHelp
--------------------------------------------------------------------------------
--- BEGIN miniwindow event handler class
--------------------------------------------------------------------------------
-function handlers.new(wName)
-  local self = {}
-  self.win = wName
 
-  function self.mousedown(flags, hotspot_id)
-    startx, starty = WindowInfo (self.win, 14), WindowInfo (self.win, 15)
-    WindowSetZOrder(self.win, 1200)
-    -- print ("we moused down on hotspot " .. hotspot_id)
-  end -- mousedown
-
-  function self.cancelmousedown(flags, hotspot_id)
-    -- print ("we cancelled moused down for hotspot " .. hotspot_id)
-  end -- cancelmousedown
-
-  function self.mouseup(flags, hotspot_id)
-    if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
-      myMenu.showMenu()
-    end
-    -- print ("we moused up on hotspot " .. hotspot_id)
-  end -- mouseup
-
-  function self.dragmove(flags, hotspot_id)
-    if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
-      -- don't drag on right-click
-      return
-    end
-    local posx, posy, flags = WindowInfo (self.win, 17),
-                       WindowInfo (self.win, 18),
-                       WindowInfo(self.win, 8)
-  
-    -- print ("moved to position", posx, posy)
-    -- move the window to the new location
-    WindowPosition(self.win, posx - startx, posy - starty, 0, setbit(flags, 2));
-    
-    -- change the mouse cursor shape appropriately
-    if posx < 0 or posx > GetInfo (281) or
-       posy < 0 or posy > GetInfo (280) then
-      check (SetCursor ( 11))   -- X cursor
-    else
-      check (SetCursor ( 1))   -- hand cursor
-    end -- if
-    
-  end -- dragmove
-  
-  function self.dragrelease(flags, hotspot_id)
-    -- print ("mouse drag release for " .. hotspot_id)
-    -- print ("released at position", WindowInfo (win, 17), WindowInfo (win, 18))
-    -- print ("moved to position", posx, posy)
-    -- the window was just moved, so this seems like a good time to save state
-    OnPluginSaveState()
-  end -- dragrelease
-  
-  return self
-end --handlers.new
--------------------------------------------------------------------------------
--- END miniwindow event handler class
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
--- general utility functions
--------------------------------------------------------------------------------
-
-function bit(p)
-  return 2 ^ (p - 1)  -- 1-based indexing
-end
-
--- Typical call:  if hasbit(x, bit(3)) then ...
-function hasbit(x, p)
-  return x % (p + p) >= p       
-end
-
-function setbit(x, p)
-  return hasbit(x, p) and x or x + p
-end
-
-function clearbit(x, p)
-  return hasbit(x, p) and x - p or x
-end
-
-function flipbit(x, p)
-  return hasbit(x,p) and x - p or x + p
-end
 
 ]]>
 </script>
