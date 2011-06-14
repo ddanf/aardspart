@@ -42,7 +42,7 @@ And so what started as "let's just take the existing tick timer and dump it into
   * Colors - The options below allow you to change smoothTick's colors.  To change any of these colors, select the option and then choose the color you want from the color picker and then click ok.
    * Background - The background color.  Setting this to anything other than black will disable transparency.
    * Center Pin - The center pin is the small circle at the center of the clock.
-   * Face - Not yet implemented.
+   * Face - The face is the circle delimited by the facets.
    * Hand - The hand is the line that sweeps around the clock face.
    * Marks - Marks (also called facets) are the marks around the outer edge of the clock circle.
    * Menu Handle - The menu handle is the small triangle in the upper left corner of the smoothTick window.
@@ -50,9 +50,11 @@ And so what started as "let's just take the existing tick timer and dump it into
    * Title - The title is the text displayed above the center pin.
    * Late - When a tick is overdue by the late threshold (see below), the digital countdown will change to this color.
    * Disconnected - When a tick is overdue by the disc threshold (see below), the digital countdown will change to this color.
+  * Face Pattern - This submenu allows you to select the pattern for the clock face.
   * Late Threshold - The amount of time that a tick can be overdue by before being considered late.
   * Disc Threshold - The amount of time that a tick can be overdue by before we decide the mud has been disconnected.
   * # of Facets - The number of marks or facets around the outer clock circle.  12 is standard for most clocks.  I have had this number as high as 24000 with no performance impact.
-  * Bring Forward - Not yet implemented.
-  * Send to Back - Not yet implemented.
+  * Bring Forward - Bring this window to the front of all windows.
+  * Send to Back - Send this window to the back of all windows.
+  * Restore Factory Defaults - Restore all settings to the defaults, regardless of what is in the state file.
   * Help - Not yet implemented.
