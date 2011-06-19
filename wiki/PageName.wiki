@@ -1,8 +1,7 @@
 #summary One-sentence summary of this page.
 
 = Introduction to SmoothTick 2.0 =
-
-http://code.google.com/p/aardspart/source/browse/wiki/SmoothTick.jpg
+                        http://aardspart.googlecode.com/svn/wiki/SmoothTick.jpg
 
 == Purpose of "New" Tick Timer ==
 
