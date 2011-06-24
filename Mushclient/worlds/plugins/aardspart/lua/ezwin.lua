@@ -2,13 +2,13 @@
 -- BEGIN ezwin miniwindow class
 -------------------------------------------------------------------------------
 ezwin = {}
-function ezwin.new(name, left, top, width, height, pos, flags, bg, fg, var)
+function ezwin.new(name, left, top, width, height, pos, flags, bg, fg, var, f)
     local self = {}
     self.name = name
     self.var = var
     WindowCreate(name, left, top, width, height, pos, flags, bg)
         
-    function self.loadFont(id, f, ds)
+    function self.loadFont(id, f)
         local nm, sz, bl, it, ul, so
         if f ~= nil then
             nm, sz, bl, it, ul, so = f.name, f.size, f.bold, f.italic, f.underline, f.strikeout
@@ -32,6 +32,28 @@ function ezwin.new(name, left, top, width, height, pos, flags, bg, fg, var)
         end
     end --self.loadFont
     
+    function self.addScrollWheel()
+        --local mufn
+        --if type(self.textClickCB)=='function' then
+        --    mufn = self.var .. '.textClickCB'
+        --else
+        --    mufn = ''
+        --end
+        --res = WindowAddHotspot(self.name, self.var .. '_scrollWheelHS',  
+        --                 self.borderWidth + 5,  -- left
+        --                 WindowFontInfo(self.name, 'fTitle', 1) + self.borderWidth + 3,  -- top
+        --                 WindowInfo(self.name, 3) - self.borderWidth - 5,  -- right
+        --                 WindowInfo(self.name, 4) - self.borderWidth - 3,   -- bottom
+        --                 "",   -- MouseOver
+        --                 "",   -- CancelMouseOver
+        --                 "",   -- MouseDown
+        --                 "",   -- CancelMouseDown
+        --                 mufn,   -- MouseUp  mufn = MouseUpFunctioN
+        --                 "Left-Click to drag this window.\nRight-Click to configure.",  -- tooltip text
+        --                 1, 0)  -- hand cursor
+        WindowScrollwheelHandler(self.name, 'hs1', self.var .. ".events.scrollWheelMove")
+    end --self.addScrollWheel
+    
     function self.addDrag()
         -- creates a hotspot that covers the entire window and is linked to the window drag handlers
         self.events = events.new(self)
@@ -49,8 +71,13 @@ function ezwin.new(name, left, top, width, height, pos, flags, bg, fg, var)
     
     function self.createMenu()
         if self.menuColor == nil then self.menuColor = ColourNameToRGB("white") end
-        WindowPolygon(win, "4,4,18,4,11,14" , self.menuColor, 6, 1, self.menuColor, 8 , true, false)
-        self.menu = menu.new(self)
+        local tbHeight = WindowFontInfo(win, 'fTitle', 1)
+        local mbHeight = WindowFontInfo(win, 'fTitle', 1)/3
+        local mbWidth =  mbHeight / math.cos(math.rad(30)) -- a little trig to brighten our day :)
+        local points = string.format("%d,%d,%d,%d,%d,%d",(tbHeight/2)-(mbWidth/2), (tbHeight/2)-(mbHeight/2), (tbHeight/2)+(mbWidth/2), (tbHeight/2)-(mbHeight/2), (tbHeight/2), (tbHeight/2)+(mbHeight/2))
+        -- WindowPolygon(win, "4,4,18,4,11,14" , self.menuColor, 6, 1, self.menuColor, 8 , true, false)
+        WindowPolygon(win, points , self.menuColor, 6, 1, self.menuColor, 8 , true, false)
+        self.menu = ezMenu.new(self)
         WindowAddHotspot(self.name, "0hs",  
                  0, 0, 20, 20,   -- rectangle
                  "",   -- MouseOver
@@ -79,17 +106,83 @@ function ezwin.new(name, left, top, width, height, pos, flags, bg, fg, var)
         end
         WindowSetZOrder(self.name, m - 1)
     end --self.sendToBack
+    
+    function self.drawBorder(borderWidth, borderColor)
+        self.borderColor = borderColor
+        self.borderWidth = borderWidth
+        for i = 0, borderWidth-1 do
+            WindowRectOp (self.name, 1, i, i, 0 - i, 0 - i, borderColor)
+        end
+    end --self.drawBorder
 
+    function self.drawTitle(title, titleColor)
+        if self.titleColor == nil then self.titleColor = ColourNameToRGB("white") end
+        res = WindowText(win, 'fTitle', title, (WindowInfo(win, 3) / 2 - WindowTextWidth(win, 'fTitle', title, false) / 2) + 1, 2, 0, 0, titleColor, false)
+        if self.borderColor ~= nil then
+            res = WindowLine(win, 0, WindowFontInfo(win, 'fTitle', 1), WindowInfo(win, 3) - 1, WindowFontInfo(win, 'fTitle', 1), self.borderColor, 256, 1)
+        end
+    end --self.drawTitle
+    
+    function self.textClickCB()
+        local mouseX, mouseY = WindowInfo(self.name, 14), WindowInfo(self.name, 15)
+        local titleHeight = WindowFontInfo(self.name, 'fTitle', 1)
+        local textHeight = WindowFontInfo(self.name, 'fText', 1)
+        local clickedLine = 1 + math.floor((mouseY - titleHeight) / textHeight)
+        if type(self.textClickHook) == 'function' then
+            self.textClickHook(clickedLine)
+        end
+    end --self.textClickCB
+    
+    function self.registerTextClickFn(fn)
+        if type(fn) == 'function' then
+            self.textClickHook = fn
+        else
+            Note('text click function was not type function - not registered.')
+        end
+    end
+
+    function self.writeText()
+        local titleHeight = WindowFontInfo(self.name, 'fTitle', 1)
+        local textHeight = WindowFontInfo(self.name, 'fText', 1)
+        local windowHeight = WindowInfo(self.name, 4)
+        local winTextLines = (windowHeight - titleHeight)/textHeight
+        local firstLine = self.scrollPos or 1
+        WindowRectOp (self.name, miniwin.rect_fill, self.borderWidth, titleHeight + self.borderWidth, 0 - self.borderWidth, 0 - self.borderWidth, ColourNameToRGB('black'))
+        i = firstLine
+        txtTop = titleHeight
+        while txtTop < WindowInfo(win, 4) and i <= #self.text do
+            --Note('winList[i].Name')
+            WindowText(self.name, 'fText', self.text[i].shortName, 5, txtTop, -5, 0 - self.borderWidth, titleColor, false)
+            i = i + 1
+            txtTop = titleHeight + (i-firstLine) * textHeight
+        end
+    end
+
+    self.loadFont('fTitle', f)
+    _G [var] = self
     return self
 end --ezwin.new
 -------------------------------------------------------------------------------
 -- END ezwin miniwindow class
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
+-- BEGIN ezwin text area class
+-------------------------------------------------------------------------------
+ezText = {}
+function ezText.new(win)
+    local self = {}
+    self.win = win
+    
+    return self
+end --ezText.new
+-------------------------------------------------------------------------------
+-- END ezwin text area class
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- BEGIN miniwindow menu class
 -------------------------------------------------------------------------------
-menu = {}
-function menu.new(win)
+ezMenu = {}
+function ezMenu.new(win)
     local self = {}
     self.win = win
   
@@ -211,7 +304,9 @@ function events.new(win)
 
     function self.mouseup(flags, hotspot_id)
         if hasbit(flags, miniwin.hotspot_got_rh_mouse) then
-            self.win.menu.showMenu()
+            self.win.textClickCB(flags, hotspot_id)
+            -- Note('clicked on ', hotspot_id)
+            -- self.win.menu.showMenu()
         end
     end -- mouseup
 
@@ -237,6 +332,21 @@ function events.new(win)
     function self.dragrelease(flags, hotspot_id)
         OnPluginSaveState()
     end -- dragrelease
+    
+    function self.scrollWheelMove(flags, hotspot_id)
+        if self.win.scrollPos == nil then self.win.scrollPos = 1 end
+        local titleHeight = WindowFontInfo(self.win.name, 'fTitle', 1)
+        local textHeight = WindowFontInfo(self.win.name, 'fText', 1)
+        local windowHeight = WindowInfo(self.win.name, 4)
+        local winTextLines = round((windowHeight - titleHeight)/textHeight)
+        if hasbit(flags, 0x100) then --scroll down
+            self.win.scrollPos = math.min(self.win.scrollPos + 1, #self.win.text - winTextLines + 1)
+        else -- scroll up
+            self.win.scrollPos = math.max(self.win.scrollPos - 1, 1)
+        end --if scroll down
+        -- Note('scrolled to: ', self.win.scrollPos)
+        self.win.writeText()
+    end --scrollWheelMove
   
     return self
 end --events.new
